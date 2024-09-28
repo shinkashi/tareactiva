@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Table } from 'react-bootstrap';
 import { Task } from './task.ts';
-import { Event, eventRepo } from './event.ts';
-import {scheduleTasks} from "./schedule.ts";
+// import { Event, eventRepo } from './event.ts';
+// import { scheduleTasks } from './schedule.ts';
 import dayjs from 'dayjs';
 
-function CreateTask({ trigger }: { trigger: () => void }) {
+import { taskRepo } from './task.ts';
+
+import './App.css';
+
+function AddTask({ trigger }: { trigger: () => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -13,7 +17,7 @@ function CreateTask({ trigger }: { trigger: () => void }) {
     const name = inputRef?.current?.value as string;
     if (!name) return;
     const task = new Task({ name });
-    await eventRepo.addTask(task);
+    taskRepo.addTask(task);
     trigger();
   };
 
@@ -21,7 +25,11 @@ function CreateTask({ trigger }: { trigger: () => void }) {
     <Form onSubmit={handleSubmit}>
       <Form.Group className="mb-3" controlId="formText">
         <div className="d-flex">
-          <Form.Control type="text" placeholder="Enter new task" ref={inputRef} />
+          <Form.Control
+            type="text"
+            placeholder="Enter new task"
+            ref={inputRef}
+          />
           <Button variant="primary" type="submit">
             Add
           </Button>
@@ -31,84 +39,96 @@ function CreateTask({ trigger }: { trigger: () => void }) {
   );
 }
 
+const WallClock = () => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Cleanup the interval when the component is unmounted
+    return () => clearInterval(timer);
+  }, []);
+
+  return <>
+      {currentTime.toLocaleTimeString()}
+      </>;
+};
+
+
+
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
 
   const fetchTasks = async () => {
-    const newTasks = await eventRepo.listTasks();
-    const plan = scheduleTasks(newTasks);
-    setTasks(plan);
-  };
+    const newTasks = taskRepo.listTasks();
+    console.log({ tasks: newTasks });
+    setTasks([...newTasks]);
+  }
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
+  const handleInputChange = (index: number, field: string, value: string) => {
+    const updatedTasks = [...tasks];
+    (updatedTasks[index] as any)[field] = value;
+    setTasks(updatedTasks);
+  };
+
+
   return (
     <>
-      <h1>TareAct</h1>
-      <h2>Tasks</h2>
-      <CreateTask trigger={fetchTasks} />
-      <TaskTable tasks={tasks} trigger={fetchTasks} />
-      <h2>Events</h2>
-      <EventTable events={eventRepo.events} />
+      <h1>TareAct <WallClock />
+      </h1>
+      <AddTask trigger={fetchTasks} />
+      <TaskTable tasks={tasks} trigger={fetchTasks} onInputChange={handleInputChange}/>
+      {/* <h2>Events</h2> */}
+      {/* <EventTable events={eventRepo.events} /> */}
     </>
   );
 }
 
-function TaskTable({ tasks, trigger }: { tasks: Task[], trigger: () => void }) {
+function TaskTable({ tasks, trigger, onInputChange }: { tasks: Task[]; trigger: () => void; onInputChange: (index: number, field: string, value: string) => void }) {
   return (
-    <Table hover>
-      <thead>
-        <tr>
-        <th>Name</th>
-        <th>ScheduledAt</th>
-        <th>Duration</th>
-        <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tasks.map((task, index) => (
-          <tr key={index}>
-            <td>{task.name}</td>
-            <td>{dayjs(task.scheduledAt).format("DD/MM HH:mm")}</td>
-            <td>{task.duration}</td>
-            <td>
-              <Button variant="outline-danger"
-                onClick={async () => {await eventRepo.deleteTask(task); trigger();}}>
-                  <i className="bi bi-trash" />
-              </Button>
-            </td>
+    <>
+      <Table hover>
+        <thead>
+          <tr>
+          <th>Action</th>
+          <th>Name</th>
+          <th>ScheduledAt</th>
+            <th>StartAt</th>
+            <th>EndAt</th>
           </tr>
-        ))}
-      </tbody>
-    </Table>
+        </thead>
+        <tbody>
+          {tasks.map((task, index) => (
+            <tr key={index}>
+              <td>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    task.start(dayjs());
+                    trigger();
+                  }}
+                >
+                  ▶️
+                </Button>
+              </td>
+              <Form.Control
+                  type="text"
+                  value={task.name}
+                  onChange={(e) => onInputChange(index, 'name', e.target.value)}
+                />
+              <td>{task.scheduledAt?.format('DD/MM HH:mm')}</td>
+              <td>{task.startAt?.format('DD/MM HH:mm')}</td>
+              <td>{task.endAt?.format('DD/MM HH:mm')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </>
   );
 }
-
-function EventTable({ events }: { events: Event[] }) {
-  events = [...events].reverse().slice(0,5);
-
-  return (
-    <Table hover>
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>EventType</th>
-          <th>Object</th>
-        </tr>
-      </thead>
-      <tbody>
-        {events.map(event => (
-          <tr key={event.id}>
-            <td>{event.createdAtStr}</td>
-            <td>{event.eventType}</td>
-            <td>{JSON.stringify(event.object)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
-  );
-}
-
-

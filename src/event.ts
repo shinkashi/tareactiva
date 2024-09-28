@@ -1,6 +1,6 @@
 import { CosmosClient, Container } from "@azure/cosmos";
 import { Task } from "./task.js";
-import dayjs, {Dayjs} from "dayjs";
+import dayjs from "dayjs";
 import { ulid, decodeTime } from "ulid";
 
 type EventType = "TaskCreated" | "TaskDeleted" | "Unknown";
@@ -12,7 +12,7 @@ export class Event {
   object?: Task
   _ts: number;
 
-  constructor(init: {eventTimestamp?: string, eventType: EventType, object: Task}) {
+  constructor(init: {eventType: EventType, object: Task}) {
     Object.assign(this, init);
     this.id ??= ulid();
     this._ts ??= init?.object?._ts ?? Date.now();
@@ -88,3 +88,31 @@ export class EventRepository {
 }
 
 export const eventRepo = await EventRepository.init();
+
+
+// export function EventTable({ events }: { events: Event[] }) {
+//   events = [...events].reverse().slice(0,5);
+
+//   return (
+//     <Table hover>
+//       <thead>
+//         <tr>
+//           <th>Time</th>
+//           <th>EventType</th>
+//           <th>Object</th>
+//         </tr>
+//       </thead>
+//       <tbody>
+//         {events.map(event => (
+//           <tr key={event.id}>
+//             <td>{event.createdAtStr}</td>
+//             <td>{event.eventType}</td>
+//             <td>{JSON.stringify(event.object)}</td>
+//           </tr>
+//         ))}
+//       </tbody>
+//     </Table>
+//   );
+// }
+
+
