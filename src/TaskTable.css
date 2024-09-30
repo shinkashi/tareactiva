@@ -1,0 +1,19 @@
+.task-completed {
+  background-color: #d4edda; /* Light green */
+}
+
+.task-in-progress {
+  background-color: #f8d7da; /* Light red */
+}
+
+.task-pending {
+  background-color: #fff3cd; /* Light yellow */
+}
+
+/* .ag-row-even {
+  background-color: transparent;
+}
+
+.ag-row-odd {
+  background-color: transparent;
+} */
