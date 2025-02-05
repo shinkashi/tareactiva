@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { Task } from './task.ts';
 
 import { AgGridReact } from 'ag-grid-react';
@@ -8,7 +7,6 @@ import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 import { Button } from 'react-bootstrap';
 import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat';
 
 import './TaskTable.css';
 
@@ -116,6 +114,7 @@ export default function TaskTable({
       editable: true,
       cellEditor: 'agTextCellEditor',
       rowDrag: true,
+      minWidth: 300,
     },
     {
       headerName: 'Duration',
@@ -132,14 +131,14 @@ export default function TaskTable({
       cellEditor: 'agTextCellEditor',
     },
     {
-        headerName: 'ScheduledAt',
-        field: 'scheduledAt',
-        valueGetter: makeValueGetter('scheduledAt'),
-        valueSetter: makeValueSetter('scheduledAt'),
-        editable: true,
-        cellEditor: 'agTextCellEditor',
-      },
-      {
+      headerName: 'ScheduledAt',
+      field: 'scheduledAt',
+      valueGetter: makeValueGetter('scheduledAt'),
+      valueSetter: makeValueSetter('scheduledAt'),
+      editable: true,
+      cellEditor: 'agTextCellEditor',
+    },
+    {
       headerName: 'StartAt',
       field: 'startAt',
       valueGetter: makeValueGetter('startAt'),
@@ -181,7 +180,7 @@ export default function TaskTable({
         rowData={tasks}
         columnDefs={columns}
         onCellValueChanged={onCellValueChanged}
-        defaultColDef={{ flex: 1, minWidth: 100 }}
+        defaultColDef={{ flex: 2 }}
         rowDragManaged={true}
         getRowClass={getRowClass}
       />

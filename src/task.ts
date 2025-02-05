@@ -43,6 +43,17 @@ export class Task {
     };
   }
 
+  placeAt(): Dayjs {
+    if (this.startAt) return this.startAt;
+    if (this.scheduledAt) return this.scheduledAt;
+    if (this.planAt) return this.planAt;
+    return dayjs("2030-12-31");  /* infinite future time */
+  }
+
+  expectedEndAt(): Dayjs | null {
+    return this.endAt || this.startAt?.add(this.duration, "minute") || null;
+  }
+
   status(): 'notstarted' | 'inprogress' | 'finished' {
     if (!this.startAt) {
       return 'notstarted';
@@ -51,6 +62,10 @@ export class Task {
       return 'inprogress';
     }
     return 'finished';
+  }
+
+  isNotStarted(): boolean {
+    return !this.startAt;
   }
 
   isInProgress(): boolean {
@@ -67,6 +82,7 @@ export class Task {
     }
 
     this.startAt = timestamp || dayjs();
+    this.planAt = null;
     await taskRepo.update(this);
   }
 
@@ -75,7 +91,7 @@ export class Task {
     const newTask = new Task({
       name: this.name,
       duration: Math.ceil(this.duration),
-      planAt: this.startAt?.add(1, "day")
+      scheduledAt: this.startAt?.add(1, "day")
     });
     await taskRepo.add(newTask);
     return newTask;
@@ -131,7 +147,7 @@ export class TaskRepo {
   }
 
   async get(id: string) {
-    return await Task.fromCosmos(this.container.item(id).get());
+    return await Task.fromCosmos(this.container.item(id).read());
   }
 }
 
