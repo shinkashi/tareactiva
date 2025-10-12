@@ -1,75 +1,59 @@
-import { useState, useEffect } from 'react';
-import { Task } from './task.ts';
+/**
+ * Taskel - Minimal Task Management Application
+ * Main App Component
+ * Engagement-based time tracking
+ */
 
-import WallClock from './WallClock.tsx';
-import AddTask from './AddTask.tsx';
-import TaskTable from './TaskTable.tsx';
-
-import { taskRepo } from './task.ts';
-
+import { useTaskService } from './presentation/hooks/useTaskService';
+import { TaskList } from './presentation/components/TaskList';
 import './App.css';
-import dayjs from 'dayjs';
-import IsSameOrAfter from 'dayjs/plugin/isSameOrAfter';
-dayjs.extend(IsSameOrAfter);
 
+function App() {
+  console.log('App component rendering...');
+  const {
+    tasks,
+    loading,
+    error,
+    currentTask,
+    engage,
+    deleteTask,
+  } = useTaskService();
+  console.log('App component - loading:', loading, 'tasks:', tasks.length);
 
-export default function App() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  const fetchTasks = async () => {
-    let newTasks = await taskRepo.list();
-
-    // filter out past completed tasks
-    newTasks = newTasks.filter(t => 
-      !t.endAt 
-      || t.endAt.isSameOrAfter(dayjs(), "date")
-    )
-
-    // refresh planAt
-    // get the expectedEnd
-    let clock = dayjs();
-    for (const t of newTasks) {
-      const expectedEnd = t.expectedEndAt();
-      if (expectedEnd && clock.isBefore(expectedEnd)) {
-        clock = expectedEnd;
-      }
-    }
-
-    // plan the unplanned works
-    for (const t of newTasks) {
-      if (t.startAt || t.scheduledAt) continue;
-      t.planAt = clock;
-      clock = clock.add(t.duration, "minute");
-    }
-    
-    // sort by placeAt()
-    newTasks.sort((a: Task, b: Task): number => {
-      return a.placeAt().unix() - b.placeAt().unix()
-    }
-  );
-
-
-    // console.log({ tasks: newTasks });
-    setTasks([...newTasks]);
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
+  if (loading && tasks.length === 0) {
+    return (
+      <div className="app-container">
+        <div className="loading-state">
+          <h1>Taskel</h1>
+          <p>Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <h1>
-        TareAct <WallClock />
-      </h1>
-      <AddTask trigger={fetchTasks} />
-      <TaskTable
-        tasks={tasks}
-        trigger={fetchTasks}
-      />
-      {/* <h2>Events</h2> */}
-      {/* <EventTable events={eventRepo.events} /> */}
-    </>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>Taskel</h1>
+        <p className="app-subtitle">Track. Execute. Learn.</p>
+      </header>
+
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+        </div>
+      )}
+
+      <main className="app-main">
+        <TaskList
+          tasks={tasks}
+          currentTask={currentTask}
+          onEngage={engage}
+          onDeleteTask={deleteTask}
+        />
+      </main>
+    </div>
   );
 }
+
+export default App;
